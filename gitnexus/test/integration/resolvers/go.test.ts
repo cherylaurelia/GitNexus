@@ -912,6 +912,47 @@ describe('Go multi-return factory type inference', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Named results: func NewX() (e *Engine, err error). The receiver type comes
+// from the result's type, not its name, in every caller shape.
+// ---------------------------------------------------------------------------
+
+describe('Go named-result factory type inference', () => {
+  let result: PipelineResult;
+
+  beforeAll(async () => {
+    result = await runPipelineFromRepo(path.join(FIXTURES, 'go-named-result-types'), () => {});
+  }, 60000);
+
+  /** `caller -> file:Owner.method` for every CALLS edge to `method`. */
+  const callsTo = (method: string): string[] =>
+    getRelationships(result, 'CALLS')
+      .filter((c) => c.target === method)
+      .map((c) => `${c.source} -> ${c.targetFilePath}:${owningTypeName(result, c.rel.targetId)}`)
+      .sort();
+
+  it('resolves x.Use() through named single, pair, same-type, non-pointer and cross-package results', () => {
+    expect(callsTo('Use')).toEqual(
+      [
+        'useSameFile -> app/engine.go:Engine',
+        'useNamed -> app/engine.go:Engine',
+        'useNamedPair -> app/engine.go:Engine',
+        'useSameType -> app/engine.go:Engine',
+        'testUsesNamed -> app/engine.go:Engine',
+        'crossApp -> app/engine.go:Engine',
+        'crossPair -> app/engine.go:Engine',
+        'useOther -> app/engine.go:Other',
+        'useValue -> app/engine.go:Engine',
+        'useExt -> ext/ext.go:Engine',
+      ].sort(),
+    );
+  });
+
+  it('takes the receiver type from the right result slot (c is Context, not Engine)', () => {
+    expect(callsTo('Render')).toEqual(['useGrouped -> app/engine.go:Context']);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Nullable receiver: var user *models.User = findUser(); user.Save()
 // Go pointer types (*User) — extractSimpleTypeName strips pointer prefix.
 // ---------------------------------------------------------------------------

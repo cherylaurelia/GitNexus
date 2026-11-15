@@ -118,6 +118,37 @@ export function normalizeGoTypeName(text: string): string {
   return t;
 }
 
+// A bare first entry is a grouped name (`a` in `a, b *T`) only when a later
+// entry has `name Type` form; otherwise it is an unnamed type (`Engine, error`).
+const GO_RESULT_NAME_RE = /^[\p{L}_][\p{L}\p{Nd}_]*$/u;
+// `name Type`, but not `chan T` / `interface {...}` / `struct {...}`.
+const GO_NAMED_RESULT_RE = /^(?!(?:chan|interface|struct)\b)[\p{L}_][\p{L}\p{Nd}_]*\s+(\S.*)$/su;
+
+/** First result type of a result list's inner text, dropping result names
+ *  (`e *T, err error` and the grouped `a, b *T` both give `*T`). */
+function firstGoResultType(list: string): string {
+  // A comment in a multi-line list can hold a comma.
+  const inner = list.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+  const entries: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth++;
+    else if (ch === ')' || ch === ']' || ch === '}') depth--;
+    else if (ch === ',' && depth === 0) {
+      entries.push(inner.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  entries.push(inner.slice(start).trim());
+  const typed = GO_RESULT_NAME_RE.test(entries[0])
+    ? entries.find((e) => GO_NAMED_RESULT_RE.test(e))
+    : entries[0];
+  const entry = typed ?? entries[0];
+  return GO_NAMED_RESULT_RE.exec(entry)?.[1].trim() ?? entry;
+}
+
 /**
  * Like `normalizeGoTypeName` but preserves dotted package-prefix
  * (`models.User` stays `models.User`). Used for return-type
@@ -126,12 +157,8 @@ export function normalizeGoTypeName(text: string): string {
  */
 export function normalizeGoReturnType(text: string): string {
   let t = text.trim();
-  // Multi-return syntax: (*T, error) → extract first type. Handles
-  // the common Go pattern where functions return (value, error).
-  if (t.startsWith('(') && t.includes(',')) {
-    const closeIdx = t.indexOf(',');
-    t = t.slice(1, closeIdx).trim();
-  }
+  // Result list: (*T, error) → first type; named (e *T, err error) → `*T`.
+  if (t.startsWith('(') && t.endsWith(')')) t = firstGoResultType(t.slice(1, -1));
   t = stripGoOuterTypePrefixes(t);
   const mapValue = goMapValueType(t);
   if (mapValue !== undefined) t = mapValue;

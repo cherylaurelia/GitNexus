@@ -311,6 +311,26 @@
     "captureGroups": 10,
     "digest": "b63d9f87f84b4bdab8bab924fe116502dddaf871b2d1ffb00618a6799abb811b"
   },
+  "go-named-result-types/app/engine.go": {
+    "captureGroups": 68,
+    "digest": "51390bdb139ac9e58867289048bc814ad53b0c4eb5620fceb9a1785a60f90fff"
+  },
+  "go-named-result-types/app/sibling.go": {
+    "captureGroups": 55,
+    "digest": "ed9bd385cb72ade98bdf7f823dd575f76420793b71bd728bd488ef9c5275c3ae"
+  },
+  "go-named-result-types/app/sibling_test.go": {
+    "captureGroups": 11,
+    "digest": "fa26fb247f92a4aa9eacf1050c66fefedadf639108f1ff85b93cd06060a00732"
+  },
+  "go-named-result-types/cmd/main.go": {
+    "captureGroups": 22,
+    "digest": "f81fc17acb4893afe3cc0cfa446a1f77095faa410bc5d7cecd7ba6dba7cfb801"
+  },
+  "go-named-result-types/ext/ext.go": {
+    "captureGroups": 22,
+    "digest": "3e3861260564a70820245a169bbd2cb5a0a3e339bee3edf7af78dfeaa8f0d945"
+  },
   "go-new-builtin/main.go": {
     "captureGroups": 12,
     "digest": "e8e3ebc47c4b0fdff1f4b4a3631544a58699bcf43ed21505a2362965af32f774"
